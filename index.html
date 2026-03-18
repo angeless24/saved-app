@@ -138,9 +138,9 @@
     .fab svg { width: 16px; height: 16px; }
 
     /* MODALS */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 200; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.22s; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 200; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.22s; padding-top: 60px; }
     .modal-overlay.open { opacity: 1; pointer-events: all; }
-    .modal { width: 100%; max-width: 430px; margin: 0 auto; background: var(--surface); border-radius: 28px 28px 0 0; padding: 12px 22px calc(26px + var(--safe-bottom)); transform: translateY(100%); transition: transform 0.32s cubic-bezier(.32,1.12,.56,1); }
+    .modal { width: 100%; max-width: 430px; margin: 0 auto; background: var(--surface); border-radius: 28px 28px 0 0; padding: 12px 22px calc(26px + var(--safe-bottom)); transform: translateY(100%); transition: transform 0.32s cubic-bezier(.32,1.12,.56,1); max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .modal-overlay.open .modal { transform: translateY(0); }
     .modal-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin: 0 auto 16px; }
     .modal-title { font-family: var(--font-ui); font-size: 20px; font-weight: 800; margin-bottom: 18px; text-align: center; }
@@ -160,7 +160,7 @@
     .cat-pick span:last-child { font-size: 10px; font-weight: 600; color: var(--text-muted); }
     .cat-pick.selected span:last-child { color: var(--accent); }
 
-    .note-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; color: var(--text); font-family: var(--font-ui); font-size: 14px; outline: none; margin-bottom: 16px; }
+    .note-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; color: var(--text); font-family: var(--font-ui); font-size: 16px; outline: none; margin-bottom: 16px; }
     .note-input::placeholder { color: var(--text-muted); }
     .note-input:focus { border-color: rgba(46,204,143,0.3); }
 
@@ -486,8 +486,13 @@ function openAddModal(){
   document.getElementById('add-note').value='';
   document.getElementById('add-save-btn').disabled=true;
   buildGrid();
-  document.getElementById('add-modal').classList.add('open');
-  setTimeout(()=>document.getElementById('add-amount').focus(),380);
+  const modal = document.getElementById('add-modal');
+  modal.classList.add('open');
+  // scroll modal content to top then focus
+  setTimeout(()=>{
+    modal.querySelector('.modal').scrollTop = 0;
+    document.getElementById('add-amount').focus();
+  }, 350);
 }
 function saveEntry(){
   const amt=parseFloat(document.getElementById('add-amount').value);
