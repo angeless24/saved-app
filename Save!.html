@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Saved!" />
+  <meta name="theme-color" content="rgb(10,10,12)" />
+  <title>Saved! – Temptation Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --surface: #131318;
+      --surface2: #1c1c24;
+      --border: rgba(255,255,255,0.07);
+      --accent: #2ecc8f;
+      --accent-dim: rgba(46,204,143,0.1);
+      --accent-glow: rgba(46,204,143,0.28);
+      --gold: #f0b429;
+      --gold-dim: rgba(240,180,41,0.1);
+      --gold-glow: rgba(240,180,41,0.22);
+      --blue: #5b9cf6;
+      --text: #ededf2;
+      --text-muted: rgba(237,237,242,0.42);
+      /* Outfit for big numbers — geometric, clean, modern */
+      --font-num: 'Outfit', sans-serif;
+      /* Plus Jakarta Sans for UI text */
+      --font-ui: 'Plus Jakarta Sans', sans-serif;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-ui); -webkit-font-smoothing: antialiased; overflow: hidden; }
+
+    #app { display: flex; flex-direction: column; height: 100dvh; max-width: 430px; margin: 0 auto; position: relative; overflow: hidden; }
+
+    .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; animation: fadeUp 0.26s ease both; }
+    .screen.active { display: flex; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(110px + var(--safe-bottom)); }
+    .scroll::-webkit-scrollbar { display: none; }
+
+    /* HEADER */
+    .header { padding: calc(var(--safe-top) + 18px) 22px 10px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .header h1 { font-family: var(--font-ui); font-size: 24px; font-weight: 800; letter-spacing: -0.3px; }
+    .header h1 span { color: var(--accent); }
+    .header-date { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+
+    /* ── TOP HERO ROW: Total + Month side by side ── */
+    .hero-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 18px 12px; }
+
+    .hero-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 18px 18px 16px; position: relative; overflow: hidden; }
+    .hero-card.big { /* left card — Total Saved, slightly more prominent */ }
+    .hero-card::after { content: ''; position: absolute; top: -24px; right: -24px; width: 90px; height: 90px; border-radius: 50%; pointer-events: none; }
+    .hero-card.green::after { background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); }
+    .hero-card.blue::after  { background: radial-gradient(circle, rgba(91,156,246,0.22) 0%, transparent 70%); }
+
+    .hero-label { font-size: 10px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+    .hero-value { font-family: var(--font-num); font-size: 34px; font-weight: 700; line-height: 1; letter-spacing: -0.5px; }
+    .hero-card.green .hero-value { color: var(--accent); }
+    .hero-card.blue  .hero-value  { color: var(--blue); }
+    .hero-sub { font-size: 11px; color: var(--text-muted); margin-top: 6px; font-weight: 500; }
+
+    /* ── MIDDLE ROW: Pending + Transferred ── */
+    .mid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 18px 14px; }
+
+    .mid-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; position: relative; overflow: hidden; }
+    .mid-card.pending-card { border-color: rgba(240,180,41,0.22); }
+
+    .mid-label { font-size: 9px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+    .mid-value { font-family: var(--font-num); font-size: 17px; font-weight: 700; line-height: 1; letter-spacing: -0.2px; }
+    .mid-card.pending-card .mid-value { color: var(--gold); }
+    .mid-card.xfr-card     .mid-value { color: var(--text-muted); }
+    .mid-sub { font-size: 9px; color: var(--text-muted); margin-top: 3px; }
+
+    .transfer-btn { display: block; width: 100%; margin-top: 8px; background: var(--gold); color: #000; border: none; border-radius: 8px; padding: 7px 0; font-family: var(--font-ui); font-size: 11px; font-weight: 700; cursor: pointer; transition: transform 0.15s, opacity 0.15s; -webkit-tap-highlight-color: transparent; }
+    .transfer-btn:disabled { opacity: 0.28; }
+    .transfer-btn:not(:disabled):active { transform: scale(0.96); }
+
+    /* expand transfers detail */
+    .xfr-detail { display: none; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
+    .xfr-detail.open { display: block; }
+    .xfr-detail-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+    .xfr-detail-item .xd-label { font-size: 11px; color: var(--text-muted); }
+    .xfr-detail-item .xd-amt { font-family: var(--font-num); font-size: 12px; font-weight: 600; color: var(--gold); }
+    .xfr-toggle { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 10px; font-weight: 600; color: var(--text-muted); cursor: pointer; letter-spacing: 0.5px; -webkit-tap-highlight-color: transparent; }
+    .xfr-toggle svg { width: 12px; height: 12px; transition: transform 0.2s; }
+    .xfr-toggle.open svg { transform: rotate(180deg); }
+
+    /* SECTION TITLE */
+    .section-title { font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); padding: 0 22px; margin-bottom: 10px; }
+
+    /* CATEGORY CARDS */
+    .categories { padding: 0 18px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+    .cat-card { background: var(--surface); border-radius: 14px; padding: 11px 14px; border: 1px solid var(--border); display: flex; align-items: center; gap: 11px; }
+    .cat-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+    .cat-info { flex: 1; min-width: 0; }
+    .cat-name { font-weight: 600; font-size: 13px; margin-bottom: 5px; }
+    .cat-bar-wrap { height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+    .cat-bar { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+    .cat-amount { font-family: var(--font-num); font-size: 14px; font-weight: 600; flex-shrink: 0; }
+
+    .empty { text-align: center; padding: 48px 40px; }
+    .empty-icon { font-size: 50px; margin-bottom: 14px; }
+    .empty h3 { font-family: var(--font-ui); font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .empty p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+    /* HISTORY */
+    .history-list { padding: 0 18px; display: flex; flex-direction: column; gap: 6px; }
+    .date-group-label { font-size: 11px; font-weight: 600; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; padding: 6px 0 2px; }
+    .history-item { background: var(--surface); border-radius: 13px; padding: 11px 14px; display: flex; align-items: center; gap: 11px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+    .history-item.transfer-row { border-color: rgba(240,180,41,0.18); background: rgba(240,180,41,0.03); }
+    .h-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+    .h-info { flex: 1; min-width: 0; }
+    .h-cat { font-weight: 600; font-size: 13px; }
+    .h-note { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .h-time { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .h-amount { font-family: var(--font-num); font-size: 14px; font-weight: 700; flex-shrink: 0; }
+    .h-amount.saving { color: var(--accent); }
+    .h-amount.transfer { color: var(--gold); }
+    .delete-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(255,80,80,0.13); border: none; border-radius: 8px; color: #ff5050; font-size: 14px; padding: 5px 8px; cursor: pointer; opacity: 0; transition: opacity 0.2s; }
+    .history-item.show-delete .delete-btn { opacity: 1; }
+
+    /* TAB BAR */
+    .tab-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: rgba(10,10,12,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; padding-bottom: var(--safe-bottom); z-index: 100; }
+    .tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 0 8px; background: none; border: none; color: var(--text-muted); font-family: var(--font-ui); font-size: 10px; font-weight: 600; cursor: pointer; transition: color 0.2s; -webkit-tap-highlight-color: transparent; }
+    .tab-btn.active { color: var(--accent); }
+    .tab-btn svg { width: 20px; height: 20px; }
+
+    /* FAB */
+    .fab { position: fixed; bottom: calc(68px + var(--safe-bottom) + 14px); left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; border: none; border-radius: 50px; padding: 13px 26px; font-family: var(--font-ui); font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 28px var(--accent-glow); display: flex; align-items: center; gap: 7px; z-index: 99; transition: transform 0.15s; -webkit-tap-highlight-color: transparent; white-space: nowrap; }
+    .fab:active { transform: translateX(-50%) scale(0.96); }
+    .fab svg { width: 16px; height: 16px; }
+
+    /* MODALS */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 200; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.22s; }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal { width: 100%; max-width: 430px; margin: 0 auto; background: var(--surface); border-radius: 28px 28px 0 0; padding: 12px 22px calc(26px + var(--safe-bottom)); transform: translateY(100%); transition: transform 0.32s cubic-bezier(.32,1.12,.56,1); }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin: 0 auto 16px; }
+    .modal-title { font-family: var(--font-ui); font-size: 20px; font-weight: 800; margin-bottom: 18px; text-align: center; }
+
+    .amount-row { display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 20px; }
+    .amount-currency { font-family: var(--font-num); font-size: 26px; font-weight: 400; color: var(--text-muted); padding-top: 8px; }
+    .amount-input { background: none; border: none; outline: none; font-family: var(--font-num); font-size: 54px; font-weight: 700; width: 180px; text-align: center; }
+    .amount-input.green-inp { color: var(--accent); caret-color: var(--accent); }
+    .amount-input.gold-inp  { color: var(--gold);  caret-color: var(--gold); }
+    .amount-input.green-inp::placeholder { color: rgba(46,204,143,0.18); }
+    .amount-input.gold-inp::placeholder  { color: rgba(240,180,41,0.18); }
+
+    .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 16px; }
+    .cat-pick { display: flex; flex-direction: column; align-items: center; gap: 3px; background: var(--surface2); border-radius: 12px; padding: 9px 4px; border: 2px solid transparent; cursor: pointer; transition: border-color 0.15s, background 0.15s; -webkit-tap-highlight-color: transparent; }
+    .cat-pick.selected { border-color: var(--accent); background: var(--accent-dim); }
+    .cat-pick span:first-child { font-size: 21px; }
+    .cat-pick span:last-child { font-size: 10px; font-weight: 600; color: var(--text-muted); }
+    .cat-pick.selected span:last-child { color: var(--accent); }
+
+    .note-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; color: var(--text); font-family: var(--font-ui); font-size: 14px; outline: none; margin-bottom: 16px; }
+    .note-input::placeholder { color: var(--text-muted); }
+    .note-input:focus { border-color: rgba(46,204,143,0.3); }
+
+    .save-btn { width: 100%; border: none; border-radius: 14px; padding: 15px; font-family: var(--font-ui); font-size: 16px; font-weight: 800; cursor: pointer; transition: opacity 0.2s, transform 0.15s; -webkit-tap-highlight-color: transparent; }
+    .save-btn.green-btn { background: var(--accent); color: #000; }
+    .save-btn.gold-btn  { background: var(--gold);   color: #000; }
+    .save-btn:disabled { opacity: 0.28; }
+    .save-btn:not(:disabled):active { transform: scale(0.98); }
+
+    .transfer-hint { font-size: 13px; color: var(--text-muted); text-align: center; margin-bottom: 18px; line-height: 1.6; }
+    .transfer-hint strong { color: var(--gold); }
+
+    /* FLASH */
+    .flash { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: var(--surface); border: 1px solid var(--border); border-radius: 22px; padding: 26px 34px; text-align: center; z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.25s cubic-bezier(.32,1.12,.56,1); }
+    .flash.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .flash.green-flash { border-color: var(--accent); box-shadow: 0 0 50px var(--accent-glow); }
+    .flash.gold-flash  { border-color: var(--gold);   box-shadow: 0 0 50px var(--gold-glow); }
+    .flash-emoji { font-size: 42px; }
+    .flash-text { font-family: var(--font-ui); font-size: 18px; font-weight: 800; margin-top: 8px; }
+    .flash.green-flash .flash-text { color: var(--accent); }
+    .flash.gold-flash  .flash-text { color: var(--gold); }
+    .flash-detail { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* INSTALL BANNER */
+    .install-banner { margin: 0 18px 12px; background: var(--accent-dim); border: 1px solid rgba(46,204,143,0.18); border-radius: 12px; padding: 11px 13px; font-size: 12px; line-height: 1.5; color: var(--text-muted); display: none; }
+    .install-banner.show { display: block; }
+    .install-banner strong { color: var(--accent); display: block; margin-bottom: 2px; font-size: 12px; font-weight: 700; }
+    .install-banner-close { float: right; background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- DASHBOARD -->
+  <div class="screen active" id="screen-dashboard">
+    <div class="header">
+      <h1>Saved<span>!</span></h1>
+      <span class="header-date" id="header-date"></span>
+    </div>
+    <div class="scroll">
+
+      <div id="install-banner" class="install-banner">
+        <button class="install-banner-close" onclick="dismissBanner()">×</button>
+        <strong>📲 Add to Home Screen</strong>
+        In Safari tap Share → "Add to Home Screen" to install as an app!
+      </div>
+
+      <!-- TOP: Total Saved + This Month (big, equal size) -->
+      <div class="hero-row">
+        <div class="hero-card green">
+          <div class="hero-label">Total Saved</div>
+          <div class="hero-value" id="stat-total">$0</div>
+          <div class="hero-sub" id="stat-wins">0 wins</div>
+        </div>
+        <div class="hero-card blue">
+          <div class="hero-label">This Month</div>
+          <div class="hero-value" id="stat-month">$0</div>
+          <div class="hero-sub" id="stat-month-name"></div>
+        </div>
+      </div>
+
+      <!-- MIDDLE: Pending + Transferred (smaller) -->
+      <div class="mid-row">
+        <div class="mid-card pending-card">
+          <div class="mid-label">🏦 Pending</div>
+          <div class="mid-value" id="pending-amount">$0.00</div>
+          <div class="mid-sub">not transferred yet</div>
+          <button class="transfer-btn" id="transfer-btn" onclick="openTransferModal()" disabled>Transfer now →</button>
+        </div>
+        <div class="mid-card xfr-card">
+          <div class="mid-label">✅ Transferred</div>
+          <div class="mid-value" id="stat-transferred">$0</div>
+          <div class="mid-sub" id="stat-xfr-count">0 transfers</div>
+          <div class="xfr-toggle" id="xfr-toggle" onclick="toggleXfrDetail()">
+            <span id="xfr-toggle-label">Details</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="xfr-detail" id="xfr-detail"></div>
+        </div>
+      </div>
+
+      <div class="section-title">By Category</div>
+      <div class="categories" id="cat-list"></div>
+      <div id="empty-state" class="empty" style="display:none">
+        <div class="empty-icon">🛡️</div>
+        <h3>No savings yet</h3>
+        <p>Tap "I resisted!" every time you skip a temptation.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="screen" id="screen-history">
+    <div class="header"><h1>History</h1></div>
+    <div class="scroll">
+      <div class="history-list" id="history-list"></div>
+      <div id="history-empty" class="empty" style="display:none">
+        <div class="empty-icon">📋</div>
+        <h3>Nothing here yet</h3>
+        <p>Your savings and transfers will appear here.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('dashboard')" id="tab-dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+    <button class="tab-btn" onclick="switchTab('history')" id="tab-history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+      History
+    </button>
+  </nav>
+
+  <!-- FAB -->
+  <button class="fab" onclick="openAddModal()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    I resisted!
+  </button>
+
+  <!-- ADD MODAL -->
+  <div class="modal-overlay" id="add-modal" onclick="overlayClick(event,'add-modal')">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Log your win 🎉</div>
+      <div class="amount-row">
+        <span class="amount-currency">$</span>
+        <input class="amount-input green-inp" type="number" inputmode="decimal" placeholder="0" id="add-amount" min="0" step="0.01" />
+      </div>
+      <div class="cat-grid" id="cat-grid"></div>
+      <input class="note-input" type="text" placeholder="Optional note (e.g. made coffee at home)" id="add-note" maxlength="80" />
+      <button class="save-btn green-btn" id="add-save-btn" onclick="saveEntry()" disabled>Save this win!</button>
+    </div>
+  </div>
+
+  <!-- TRANSFER MODAL -->
+  <div class="modal-overlay" id="transfer-modal" onclick="overlayClick(event,'transfer-modal')">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Transfer to Savings 🏦</div>
+      <div class="transfer-hint">Pending: <strong id="xfr-pending-label">$0.00</strong><br/>Enter the amount you're transferring</div>
+      <div class="amount-row">
+        <span class="amount-currency" style="color:var(--gold)">$</span>
+        <input class="amount-input gold-inp" type="number" inputmode="decimal" placeholder="0" id="xfr-amount" min="0" step="0.01" />
+      </div>
+      <input class="note-input" type="text" placeholder="Optional note (e.g. ING savings account)" id="xfr-note" maxlength="80" />
+      <button class="save-btn gold-btn" id="xfr-save-btn" onclick="saveTransfer()" disabled>Confirm Transfer</button>
+    </div>
+  </div>
+
+  <!-- FLASH -->
+  <div class="flash" id="flash">
+    <div class="flash-emoji" id="flash-emoji">🎉</div>
+    <div class="flash-text" id="flash-text"></div>
+    <div class="flash-detail" id="flash-detail"></div>
+  </div>
+
+</div>
+<script>
+const CATS = [
+  { id:'coffee',    label:'Coffee',    emoji:'☕️', color:'#a0653a' },
+  { id:'food',      label:'Food',      emoji:'🍔', color:'#f27035' },
+  { id:'shopping',  label:'Shopping',  emoji:'🛍️', color:'#7c5cbf' },
+  { id:'drinks',    label:'Drinks',    emoji:'🧃', color:'#28b89a' },
+  { id:'transport', label:'Transport', emoji:'🚗', color:'#3d8ee8' },
+  { id:'entertain', label:'Fun',       emoji:'🎬', color:'#d94f7c' },
+  { id:'snacks',    label:'Snacks',    emoji:'🍿', color:'#e8a020' },
+  { id:'other',     label:'Other',     emoji:'💡', color:'#6b7280' },
+];
+
+function ld(k,d){try{return JSON.parse(localStorage.getItem(k)??'null')??d}catch{return d}}
+function sv(k,v){localStorage.setItem(k,JSON.stringify(v))}
+
+let entries   = ld('tt_entries',[]);
+let transfers = ld('tt_transfers',[]);
+let selCat    = 'coffee';
+let xfrDetailOpen = false;
+
+const totalSaved       = () => entries.reduce((s,e)=>s+e.amount,0);
+const totalTransferred = () => transfers.reduce((s,t)=>s+t.amount,0);
+const pendingAmt       = () => Math.max(0, totalSaved()-totalTransferred());
+const thisMonth        = () => {
+  const n=new Date();
+  return entries.filter(e=>{const d=new Date(e.date);return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear()}).reduce((s,e)=>s+e.amount,0);
+};
+
+const fmt  = n=>'$'+n.toFixed(2);
+const fmtK = n=>n>=1000?'$'+(n/1000).toFixed(1)+'k':fmt(n);
+const catBy= id=>CATS.find(c=>c.id===id)||CATS[7];
+const uid  = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
+
+function fmtDate(iso){
+  const d=new Date(iso),now=new Date(),yst=new Date();yst.setDate(yst.getDate()-1);
+  if(d.toDateString()===now.toDateString())return'Today';
+  if(d.toDateString()===yst.toDateString())return'Yesterday';
+  return d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+}
+function fmtTime(iso){return new Date(iso).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})}
+function fmtShortDate(iso){return new Date(iso).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}
+
+// DASHBOARD
+function renderDashboard(){
+  const total=totalSaved(), pend=pendingAmt(), xfrd=totalTransferred(), month=thisMonth();
+  const n=entries.length, t=transfers.length;
+
+  document.getElementById('stat-total').textContent      = fmtK(total);
+  document.getElementById('stat-wins').textContent       = n+(n===1?' win':' wins');
+  document.getElementById('stat-month').textContent      = fmtK(month);
+  document.getElementById('stat-month-name').textContent = new Date().toLocaleString('en-AU',{month:'long'});
+  document.getElementById('stat-transferred').textContent= fmtK(xfrd);
+  document.getElementById('stat-xfr-count').textContent  = t+(t===1?' transfer':' transfers');
+  document.getElementById('pending-amount').textContent  = fmt(pend);
+  document.getElementById('transfer-btn').disabled       = pend<=0;
+
+  // Transfer detail list
+  const xfrDetail = document.getElementById('xfr-detail');
+  if(transfers.length === 0){
+    xfrDetail.innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:4px 0">No transfers yet</div>';
+    document.getElementById('xfr-toggle').style.display='none';
+  } else {
+    document.getElementById('xfr-toggle').style.display='flex';
+    xfrDetail.innerHTML = transfers.slice(0,5).map(t=>`
+      <div class="xfr-detail-item">
+        <span class="xd-label">${fmtShortDate(t.date)}${t.note?' · '+t.note:''}</span>
+        <span class="xd-amt">${fmt(t.amount)}</span>
+      </div>`).join('');
+  }
+
+  // Categories
+  const totals={};CATS.forEach(c=>totals[c.id]=0);
+  entries.forEach(e=>{if(totals[e.cat]!==undefined)totals[e.cat]+=e.amount});
+  const active=CATS.filter(c=>totals[c.id]>0).sort((a,b)=>totals[b.id]-totals[a.id]);
+  const cl=document.getElementById('cat-list');
+  document.getElementById('empty-state').style.display = active.length?'none':'';
+  cl.innerHTML=active.map(c=>{
+    const pct=total>0?totals[c.id]/total*100:0;
+    return`<div class="cat-card">
+      <div class="cat-icon" style="background:${c.color}22">${c.emoji}</div>
+      <div class="cat-info">
+        <div class="cat-name">${c.label}</div>
+        <div class="cat-bar-wrap"><div class="cat-bar" style="width:${pct}%;background:${c.color}"></div></div>
+      </div>
+      <div class="cat-amount" style="color:${c.color}">${fmt(totals[c.id])}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleXfrDetail(){
+  xfrDetailOpen=!xfrDetailOpen;
+  document.getElementById('xfr-detail').classList.toggle('open', xfrDetailOpen);
+  document.getElementById('xfr-toggle').classList.toggle('open', xfrDetailOpen);
+  document.getElementById('xfr-toggle-label').textContent = xfrDetailOpen ? 'Hide' : 'Details';
+}
+
+// HISTORY
+function renderHistory(){
+  const list=document.getElementById('history-list');
+  const empty=document.getElementById('history-empty');
+  const all=[...entries.map(e=>({...e,_t:'s'})),...transfers.map(t=>({...t,_t:'x'}))]
+    .sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(!all.length){list.innerHTML='';empty.style.display='';return}
+  empty.style.display='none';
+  const groups={};
+  all.forEach(e=>{const l=fmtDate(e.date);if(!groups[l])groups[l]=[];groups[l].push(e)});
+  list.innerHTML=Object.entries(groups).map(([lbl,items])=>`
+    <div class="date-group-label">${lbl}</div>
+    ${items.map(e=>{
+      if(e._t==='x')return`<div class="history-item transfer-row" onclick="toggleDel(this)">
+        <div class="h-icon" style="background:rgba(240,180,41,0.13)">🏦</div>
+        <div class="h-info">
+          <div class="h-cat" style="color:var(--gold)">Transferred to Savings</div>
+          ${e.note?`<div class="h-note">${e.note}</div>`:''}
+          <div class="h-time">${fmtTime(e.date)}</div>
+        </div>
+        <div class="h-amount transfer">−${fmt(e.amount)}</div>
+        <button class="delete-btn" onclick="delRec('x','${e.id}',event)">🗑</button>
+      </div>`;
+      const c=catBy(e.cat);
+      return`<div class="history-item" onclick="toggleDel(this)">
+        <div class="h-icon" style="background:${c.color}22">${c.emoji}</div>
+        <div class="h-info">
+          <div class="h-cat">${c.label}</div>
+          ${e.note?`<div class="h-note">${e.note}</div>`:''}
+          <div class="h-time">${fmtTime(e.date)}</div>
+        </div>
+        <div class="h-amount saving">+${fmt(e.amount)}</div>
+        <button class="delete-btn" onclick="delRec('s','${e.id}',event)">🗑</button>
+      </div>`;
+    }).join('')}`).join('');
+}
+
+function toggleDel(el){el.classList.toggle('show-delete')}
+function delRec(type,id,e){
+  e.stopPropagation();
+  if(type==='s'){entries=entries.filter(x=>x.id!==id);sv('tt_entries',entries)}
+  else{transfers=transfers.filter(x=>x.id!==id);sv('tt_transfers',transfers)}
+  renderDashboard();renderHistory();
+}
+
+// TABS
+function switchTab(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='history')renderHistory();
+}
+
+// ADD MODAL
+function buildGrid(){
+  document.getElementById('cat-grid').innerHTML=CATS.map(c=>`
+    <div class="cat-pick ${c.id===selCat?'selected':''}" onclick="selCatFn('${c.id}')"
+      style="${c.id===selCat?`border-color:${c.color};background:${c.color}22`:''}">
+      <span>${c.emoji}</span><span>${c.label}</span>
+    </div>`).join('');
+}
+function selCatFn(id){selCat=id;buildGrid()}
+
+function openAddModal(){
+  document.getElementById('add-amount').value='';
+  document.getElementById('add-note').value='';
+  document.getElementById('add-save-btn').disabled=true;
+  buildGrid();
+  document.getElementById('add-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('add-amount').focus(),380);
+}
+function saveEntry(){
+  const amt=parseFloat(document.getElementById('add-amount').value);
+  if(!amt||amt<=0)return;
+  const note=document.getElementById('add-note').value.trim();
+  entries.unshift({id:uid(),amount:amt,cat:selCat,note,date:new Date().toISOString()});
+  sv('tt_entries',entries);
+  closeModal('add-modal');
+  renderDashboard();
+  const c=catBy(selCat);
+  flash('green-flash','🎉','Nice save!',`${c.emoji} ${fmt(amt)} saved on ${c.label}`);
+}
+document.getElementById('add-amount').addEventListener('input',function(){
+  document.getElementById('add-save-btn').disabled=!(parseFloat(this.value)>0);
+});
+
+// TRANSFER MODAL
+function openTransferModal(){
+  const p=pendingAmt();
+  document.getElementById('xfr-pending-label').textContent=fmt(p);
+  document.getElementById('xfr-amount').value=p.toFixed(2);
+  document.getElementById('xfr-note').value='';
+  document.getElementById('xfr-save-btn').disabled=false;
+  document.getElementById('transfer-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('xfr-amount').focus(),380);
+}
+function saveTransfer(){
+  const amt=parseFloat(document.getElementById('xfr-amount').value);
+  if(!amt||amt<=0)return;
+  const note=document.getElementById('xfr-note').value.trim();
+  transfers.unshift({id:uid(),amount:amt,note,date:new Date().toISOString()});
+  sv('tt_transfers',transfers);
+  closeModal('transfer-modal');
+  renderDashboard();
+  flash('gold-flash','🏦','Transferred!',`${fmt(amt)} moved to your savings account`);
+}
+document.getElementById('xfr-amount').addEventListener('input',function(){
+  document.getElementById('xfr-save-btn').disabled=!(parseFloat(this.value)>0);
+});
+
+// HELPERS
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function overlayClick(e,id){if(e.target===document.getElementById(id))closeModal(id)}
+
+function flash(cls,emoji,text,detail){
+  const f=document.getElementById('flash');
+  f.className='flash '+cls+' show';
+  document.getElementById('flash-emoji').textContent=emoji;
+  document.getElementById('flash-text').textContent=text;
+  document.getElementById('flash-detail').textContent=detail;
+  setTimeout(()=>f.classList.remove('show'),2400);
+}
+
+function showInstallBanner(){
+  const dismissed=localStorage.getItem('tt_banner_dismissed');
+  const standalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
+  if(!dismissed&&!standalone)document.getElementById('install-banner').classList.add('show');
+}
+function dismissBanner(){localStorage.setItem('tt_banner_dismissed','1');document.getElementById('install-banner').classList.remove('show')}
+
+// INIT
+document.getElementById('header-date').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'});
+renderDashboard();
+showInstallBanner();
+</script>
+</body>
+</html>
