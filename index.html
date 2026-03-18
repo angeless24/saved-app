@@ -9,38 +9,6 @@
   <meta name="theme-color" content="rgb(10,10,12)" />
   <title>Saved! – Temptation Tracker</title>
   <link rel="apple-touch-icon" href="icon.png" />
-  <script>
-    (function(){
-      const c=document.createElement("canvas");c.width=512;c.height=512;
-      const ctx=c.getContext("2d");
-      ctx.fillStyle="#0d0d0f";ctx.fillRect(0,0,512,512);
-      function shield(ctx,x,y,w,h){
-        ctx.beginPath();ctx.moveTo(x+w/2,y);ctx.lineTo(x+w,y+h*0.25);
-        ctx.lineTo(x+w,y+h*0.6);ctx.quadraticCurveTo(x+w,y+h*0.85,x+w/2,y+h);
-        ctx.quadraticCurveTo(x,y+h*0.85,x,y+h*0.6);ctx.lineTo(x,y+h*0.25);ctx.closePath();
-      }
-      const sx=76,sy=52,sw=360,sh=408;
-      ctx.shadowColor="rgba(0,0,0,0.7)";ctx.shadowBlur=28;ctx.shadowOffsetY=8;
-      shield(ctx,sx-10,sy-10,sw+20,sh+20);
-      const bg=ctx.createLinearGradient(sx,sy,sx+sw,sy+sh);
-      bg.addColorStop(0,"#c8c8c8");bg.addColorStop(0.45,"#f2f2f2");bg.addColorStop(1,"#7a7a7a");
-      ctx.fillStyle=bg;ctx.fill();ctx.shadowColor="transparent";
-      ctx.save();shield(ctx,sx,sy,sw,sh);ctx.clip();
-      ctx.fillStyle="#c0392b";ctx.fillRect(sx,sy,sw/2+2,sh);ctx.restore();
-      ctx.save();shield(ctx,sx,sy,sw,sh);ctx.clip();
-      ctx.fillStyle="#e8e8e8";ctx.fillRect(sx+sw/2,sy,sw/2,sh);ctx.restore();
-      ctx.save();shield(ctx,sx,sy,sw,sh);ctx.clip();
-      ctx.shadowColor="rgba(255,220,60,0.5)";ctx.shadowBlur=20;
-      ctx.fillStyle="rgba(255,255,255,0.95)";
-      ctx.beginPath();
-      ctx.moveTo(272,148);ctx.lineTo(236,258);ctx.lineTo(264,258);
-      ctx.lineTo(230,370);ctx.lineTo(298,240);ctx.lineTo(268,240);ctx.closePath();
-      ctx.fill();ctx.restore();
-      ctx.save();shield(ctx,sx+12,sy+12,sw-24,sh-24);
-      ctx.strokeStyle="rgba(255,255,255,0.12)";ctx.lineWidth=3;ctx.stroke();ctx.restore();
-      document.getElementById("apple-touch-icon").href=c.toDataURL("image/png");
-    })();
-  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
@@ -205,7 +173,7 @@
     .transfer-hint { font-size: 13px; color: var(--text-muted); text-align: center; margin-bottom: 18px; line-height: 1.6; }
     .transfer-hint strong { color: var(--gold); }
 
-    /* FLASH    */
+    /* FLASH */
     .flash { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: var(--surface); border: 1px solid var(--border); border-radius: 22px; padding: 26px 34px; text-align: center; z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.25s cubic-bezier(.32,1.12,.56,1); }
     .flash.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     .flash.green-flash { border-color: var(--accent); box-shadow: 0 0 50px var(--accent-glow); }
