@@ -108,7 +108,7 @@
 .cat-bar { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
 .cat-amount { font-family: var(--font-num); font-size: 14px; font-weight: 600; flex-shrink: 0; }
 
-.empty { text-align: center; padding: 48px 40px; }
+.empty { text-align: center; padding: 32px 40px; position: relative; z-index: 0; }
 .empty-icon { font-size: 50px; margin-bottom: 14px; }
 .empty h3 { font-family: var(--font-ui); font-size: 18px; font-weight: 700; margin-bottom: 8px; }
 .empty p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
@@ -354,7 +354,7 @@
     <div class="scroll">
 
 ```
-  <div id="install-banner" class="install-banner">
+  <div id="install-banner" class="install-banner" style="display:none">
     <button class="install-banner-close" onclick="dismissBanner()">×</button>
     <strong>📲 Install on your iPhone</strong><br>
     1. Tap <b style="color:var(--accent)">•••</b> bottom right &nbsp;2. Tap <b style="color:var(--accent)">Share</b> &nbsp;3. Tap <b style="color:var(--accent)">"Add to Home Screen"</b> &nbsp;4. Tap <b style="color:var(--accent)">Add</b> ✅
@@ -425,7 +425,7 @@
     </div>
   </div>
   <div class="categories" id="cat-list"></div>
-  <div id="empty-state" class="empty">
+  <div id="empty-state" class="empty" style="display:none">
     <div class="empty-icon">🛡️</div>
     <h3>No savings yet</h3>
     <p>Tap "I resisted!" every time you skip a temptation.</p>
@@ -687,7 +687,7 @@ const vals = catViewMoney ? totals : counts;
 const base = Object.values(vals).reduce((s,v)=>s+v,0);
 const active=CATS.filter(c=>vals[c.id]>0).sort((a,b)=>vals[b.id]-vals[a.id]);
 const cl=document.getElementById(‘cat-list’);
-document.getElementById(‘empty-state’).style.display = active.length?‘none’:’’;
+const _es=document.getElementById(‘empty-state’); if(_es)_es.style.display=active.length?‘none’:‘block’;
 cl.innerHTML=active.map(c=>{
 const pct=base>0?vals[c.id]/base*100:0;
 const display = catViewMoney ? fmt(vals[c.id]) : vals[c.id]+‘×’;
@@ -873,9 +873,9 @@ function showInstallBanner(){
 const dismissed=localStorage.getItem(‘tt_banner_dismissed’);
 const standalone=window.matchMedia(’(display-mode: standalone)’).matches||window.navigator.standalone===true;
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
-if(!dismissed&&!standalone&&isIOS)document.getElementById(‘install-banner’).classList.add(‘show’);
+if(!dismissed&&!standalone&&isIOS){ const b=document.getElementById(‘install-banner’); if(b) b.style.display=‘block’; }
 }
-function dismissBanner(){localStorage.setItem(‘tt_banner_dismissed’,‘1’);document.getElementById(‘install-banner’).classList.remove(‘show’)}
+function dismissBanner(){localStorage.setItem(‘tt_banner_dismissed’,‘1’);const b=document.getElementById(‘install-banner’);if(b)b.style.display=‘none’;}
 
 // COINS
 function totalCoins(){
