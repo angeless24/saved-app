@@ -425,7 +425,7 @@
     </div>
   </div>
   <div class="categories" id="cat-list"></div>
-  <div id="empty-state" class="empty" style="display:none">
+  <div id="empty-state" class="empty">
     <div class="empty-icon">🛡️</div>
     <h3>No savings yet</h3>
     <p>Tap "I resisted!" every time you skip a temptation.</p>
@@ -871,8 +871,9 @@ setTimeout(()=>el.remove(),1900);
 
 function showInstallBanner(){
 const dismissed=localStorage.getItem(‘tt_banner_dismissed’);
-const standalone=window.matchMedia(’(display-mode: standalone)’).matches||window.navigator.standalone;
-if(!dismissed&&!standalone)document.getElementById(‘install-banner’).classList.add(‘show’);
+const standalone=window.matchMedia(’(display-mode: standalone)’).matches||window.navigator.standalone===true;
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+if(!dismissed&&!standalone&&isIOS)document.getElementById(‘install-banner’).classList.add(‘show’);
 }
 function dismissBanner(){localStorage.setItem(‘tt_banner_dismissed’,‘1’);document.getElementById(‘install-banner’).classList.remove(‘show’)}
 
